@@ -11,6 +11,8 @@ export default function RootLayout() {
           <Stack.Screen name="LogIn" options={{ headerShown: false }} />
           <Stack.Screen name="home" options={{ headerShown: false }} />
           <Stack.Screen name="completeProfile" options={{ headerShown: false }} />
+          <Stack.Screen name="CompleteProfileTaller" options={{ headerShown: false }} />
+          <Stack.Screen name="CompleteProfilePersona" options={{ headerShown: false }} />
        </Stack>
     </SafeAreaView>
   </SafeAreaProvider>
