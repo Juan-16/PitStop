@@ -1,18 +1,17 @@
-import { View, Text, TouchableOpacity, Image, TextInput, ScrollView, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard } from 'react-native'
-import React, { useState, useEffect } from "react";
-import { useRouter, Link } from "expo-router";
-import Modal from "react-native-modal";
-import * as ImagePicker from 'expo-image-picker';
-import MapPicker from '../components/MapPicker';
-import * as Location from "expo-location";
-import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import * as FileSystem from "expo-file-system";
-import * as mime from "react-native-mime-types";
+import * as ImagePicker from 'expo-image-picker';
+import * as Location from "expo-location";
+import { useRouter } from "expo-router";
 import { doc, setDoc } from "firebase/firestore";
-import { auth, db, storage } from "../firebase.config";
+import React, { useEffect, useState } from "react";
+import { Image, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import Modal from "react-native-modal";
+import MapPicker from '../components/MapPicker';
 import { uploadToCloudinary } from "../components/uploadToCloudinary";
+import { auth, db } from "../firebase.config";
+
+
 
 const diasSemana = [
     "Lunes",
@@ -51,8 +50,8 @@ export default function completeProfile() {
                     datosPersonales: {
                         nombre,
                         telefono,
-                        edad,
                         direccion,
+                        fechaNacimiento: fechaNacimiento?.toISOString(),
                         imageUrl,
                         creadoEn: new Date(),
                     },
@@ -103,7 +102,7 @@ export default function completeProfile() {
                         imageUrl,
                         creadoEn: new Date(),
                     },
-                    horarios, 
+                    horarios,
                 },
                 { merge: true }
             );
@@ -211,25 +210,26 @@ export default function completeProfile() {
 
     const [errorNombre, setErrorNombre] = useState(false);
     const [errorTelefono, setErrorTelefono] = useState(false);
-    const [errorEdad, setErrorEdad] = useState(false);
+    const [errorFechaNacimiento, setErrorFechaNacimiento] = useState(false);
     const [errorDireccion, setErrorDireccion] = useState(false);
 
     const [nombre, setNombre] = useState("");
     const [telefono, setTelefono] = useState("");
-    const [edad, setEdad] = useState("");
+    const [fechaNacimiento, setFechaNacimiento] = useState<Date | null>(null);
+    const [mostrarFechaPicker, setMostrarFechaPicker] = useState(false);
 
     const validarCampos = (): boolean => {
         const nombreValido = nombre.trim().length > 0;
         const telefonoValido = /^[0-9]{7,10}$/.test(telefono.trim());
-        const edadValida = /^\d+$/.test(edad.trim()) && parseInt(edad) > 0;
         const direccionValida = direccion.trim().length > 5;
+        const fechaNacimientoValida = fechaNacimiento !== null;
 
         setErrorNombre(!nombreValido);
         setErrorTelefono(!telefonoValido);
-        setErrorEdad(!edadValida);
         setErrorDireccion(!direccionValida);
+        setErrorFechaNacimiento(!fechaNacimientoValida);
 
-        return nombreValido && telefonoValido && edadValida && direccionValida;
+        return nombreValido && telefonoValido && direccionValida && fechaNacimientoValida;
     };
 
 
@@ -369,18 +369,38 @@ export default function completeProfile() {
                                 />
                                 {errorTelefono && <Text className="text-red-500 text-sm w-10/12">Teléfono inválido</Text>}
 
-                                <TextInput
-                                    placeholder="Edad"
-                                    placeholderTextColor="#9CA3AF"
-                                    keyboardType="numeric"
-                                    value={edad}
-                                    onChangeText={(text) => {
-                                        setEdad(text);
-                                        setErrorEdad(false);
-                                    }}
-                                    className={`w-10/12 bg-white text-black text-left px-4 py-3 rounded-xl my-3 border ${errorEdad ? "border-red-500" : "border-transparent"}`}
-                                />
-                                {errorEdad && <Text className="text-red-500 text-sm w-10/12">Edad inválida</Text>}
+                                <TouchableOpacity
+                                    onPress={() => setMostrarFechaPicker(true)}
+                                    className={`w-10/12 bg-white text-black text-left px-4 py-3 rounded-xl my-3 border ${errorFechaNacimiento ? "border-red-500" : "border-transparent"}`}
+                                >
+                                    <Text className="text-black">
+                                        {fechaNacimiento
+                                            ? fechaNacimiento.toLocaleDateString("es-CO", {
+                                                year: "numeric",
+                                                month: "long",
+                                                day: "numeric",
+                                            })
+                                            : "Selecciona tu fecha de nacimiento"}
+
+                                    </Text>
+                                </TouchableOpacity>
+                                {mostrarFechaPicker && (
+                                    <DateTimePicker
+                                        mode="date"
+                                        value={fechaNacimiento || new Date(2000, 0, 1)}
+                                        maximumDate={new Date()}
+                                        display={Platform.OS === "ios" ? "spinner" : "default"}
+                                        onChange={(event, selectedDate) => {
+                                            if (selectedDate) {
+                                                setFechaNacimiento(selectedDate);
+                                                setErrorFechaNacimiento(false);
+                                            }
+                                            setMostrarFechaPicker(false);
+                                        }}
+                                    />
+                                )}{errorFechaNacimiento && (
+                                    <Text className="text-red-500 text-sm w-10/12 -mt-2">La fecha de nacimiento es obligatoria</Text>
+                                )}
                             </View>
 
 
@@ -624,7 +644,7 @@ export default function completeProfile() {
                                             direccion,
                                         });
                                         router.push("/CompleteProfileTaller");
-                                    }else { 
+                                    } else {
                                         console.log("Campos inválidos");
                                     }
                                 }}
@@ -634,7 +654,7 @@ export default function completeProfile() {
                         </View>
                     )}
                 </View>
-        
+
 
             </View>}
         </KeyboardAwareScrollView>
