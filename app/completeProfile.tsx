@@ -442,7 +442,6 @@ export default function completeProfile() {
                                 onPress={() => {
                                     if (validarCampos()) {
                                         guardarDatosPersona();
-                                        router.push("/CompleteProfilePersona");
                                     }
                                 }}
 
